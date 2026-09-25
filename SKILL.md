@@ -1,6 +1,6 @@
 ---
 name: launch-readiness-checklist
-description: Use before shipping a website or web app to production, or to re-audit one that is already live. Works out the site's stack and what it actually does (accounts, payments, email, user-submitted content, analytics), asks the user for the business facts it needs (domain, legal entity, analytics IDs, policies), then audits and fixes only the items that apply — legal pages and claims accuracy, consent, SEO tags/canonical/robots/sitemap/Open Graph/structured data, favicon and manifest, custom 404, accessibility and mobile, form states, analytics, security headers, exposed files, abuse protection, email authentication, payment terms, and backups/monitoring. Each item is explained in plain language so a developer or non-technical founder learns what it is and why it matters, not just whether it's done. Trigger on requests like "is this ready to launch", "pre-launch audit", "SEO checklist", or "go-live checklist".
+description: Use before shipping a website or web app to production, or to re-audit one that is already live. Works out the site's stack and what it actually does (accounts, payments, email, user-submitted content, analytics), asks the user for the business facts it needs (domain, legal entity, analytics IDs, policies), then audits and fixes only the items that apply — legal pages and claims accuracy, consent, SEO tags/canonical/robots/sitemap/llms.txt/Open Graph/structured data, favicon and manifest, custom 404, accessibility and mobile, form states, analytics, security headers, exposed files, abuse protection, email authentication, payment terms, and backups/monitoring. Each item is explained in plain language so a developer or non-technical founder learns what it is and why it matters, not just whether it's done. Trigger on requests like "is this ready to launch", "pre-launch audit", "SEO checklist", or "go-live checklist".
 ---
 
 # Launch Readiness Checklist
@@ -159,6 +159,8 @@ fix, and don't skip silently.
 - **Takes payments:** T1.9 applies.
 - **Sends email:** T1.10 and T5.7 apply.
 - **Accepts user-submitted content or URLs:** T5.6 applies.
+- **Docs or developer site:** in T2.11, also consider `llms-full.txt` and
+  per-page `.md` versions.
 
 ## 4. The checklist, by priority tier
 
@@ -470,6 +472,46 @@ shared or clicked.
   from the index, allow crawling until they've dropped out, rather than
   `Disallow`-ing them.
 
+**T2.11 `llms.txt`** *(recommended, low effort — never launch-blocking)*
+- *What it is:* a Markdown file at `/llms.txt` that gives AI assistants and
+  agents a curated map of the site — what it is, who it's for, and the handful
+  of pages worth reading, each with a one-line note on when to read it
+  (format from llmstxt.org).
+- *Why it matters:* AI coding tools and agents that fetch it answer questions
+  about the product more accurately, and it costs minutes to write. Be honest
+  about the limits: it is **not** a search-ranking signal, and the major
+  search and AI crawlers haven't committed to reading it — don't sell it as SEO.
+- *Check:* `curl -sI https://<production-domain>/llms.txt` → 200, served as
+  `text/plain` or `text/markdown`. Content has exactly one H1, a `>` summary,
+  and H2 sections of `- [Title](absolute-url): note` links. Every link returns
+  200 without redirecting and uses the canonical URL form (T2.3); nothing links
+  to `noindex` or private pages (T2.10); every claim matches reality (T1.8). It
+  should be curated (roughly 10–30 links), not a copy of the sitemap.
+- *Fix:* fill in only facts from the kickoff answers — no invented pricing,
+  features, or policies (section 2):
+  ```markdown
+  # <Product name>
+
+  > <One or two plain sentences: what it is and who it's for.>
+
+  <Key facts: what it does and doesn't do, pricing model, audience.>
+
+  ## Docs
+  - [Quickstart](https://<production-domain>/docs/quickstart): <when to read it>
+
+  ## Product
+  - [Pricing](https://<production-domain>/pricing): <plans and limits>
+
+  ## Policies
+  - [Privacy](https://<production-domain>/privacy): <what data is kept>
+
+  ## Optional
+  - [Changelog](https://<production-domain>/changelog): <release history>
+  ```
+  Drop sections that don't apply. Docs-heavy sites can also publish
+  `llms-full.txt` (full content concatenated) and `.md` versions of pages,
+  linked from `llms.txt`; that's N/A for small marketing sites.
+
 ### Tier 3 — Conversion & UX
 
 **T3.1 CTA above the fold** *(N/A if no conversion goal)*
@@ -712,7 +754,9 @@ sign off on alone. Tiers 2–5 can be implemented and reported in one pass.
   the fold on mobile, sticky CTA doesn't overlap content, form error states
   trigger correctly, the cookie banner blocks tracking until accepted.
 - Validate `sitemap.xml` and `robots.txt` are well-formed and reachable, and that
-  every sitemap URL returns 200 without redirecting.
+  every sitemap URL returns 200 without redirecting. If `llms.txt` exists,
+  confirm it's reachable with a text/markdown content type and that every link
+  in it returns 200 without redirecting.
 - If deployed, probe the user's own domain with read-only requests:
   - `curl -sIL http://<domain>/` → one permanent hop to the canonical https URL
   - `curl -sI https://<domain>/<random-nonexistent-path>` → real 404
